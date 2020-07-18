@@ -86,7 +86,7 @@ namespace QuickFactorService
 
             byte[] resultBytes = Encoding.UTF8.GetBytes(sb.ToString());
             WebOperationContext.Current.OutgoingResponse.ContentType = "text/html";
-
+            WebOperationContext.Current.OutgoingResponse.StatusCode = System.Net.HttpStatusCode.OK;
             return new MemoryStream(resultBytes);
         }
 
@@ -116,6 +116,10 @@ namespace QuickFactorService
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                status = -1;
+            }
 
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">");
@@ -133,8 +137,41 @@ namespace QuickFactorService
 
             byte[] resultBytes = Encoding.UTF8.GetBytes(sb.ToString());
             WebOperationContext.Current.OutgoingResponse.ContentType = "text/html";
-
+            WebOperationContext.Current.OutgoingResponse.StatusCode = System.Net.HttpStatusCode.OK;
             return new MemoryStream(resultBytes);
+        }
+
+        public AuthInfoDTO GetSecretDateAndPin(string nuid)
+        {
+            WebOperationContext.Current.OutgoingResponse.StatusCode = System.Net.HttpStatusCode.OK;
+            try
+            {
+                IList<authentication_info> authInfo = GetAuthInfoByNuid(nuid);
+                if (authInfo == null || authInfo.Count() == 0)
+                {
+                    return null;
+                }
+                else
+                {
+                    AuthInfoDTO result = new AuthInfoDTO();
+                    result.NUID = authInfo.First().NUID;
+                    result.PIN = authInfo.First().PIN;
+                    if (result.PIN.Equals("DISABLED"))
+                    {
+                        result.ANSWER = ClsTripleDES.Decrypt(authInfo.First().ANSWER);
+                    }
+                    else
+                    {
+                        result.ANSWER = authInfo.First().ANSWER;
+                    }
+
+                    return result;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         public System.IO.Stream SetSecretDate(string nuid, string secretDate, string sessionId)
@@ -155,7 +192,7 @@ namespace QuickFactorService
                 }
                 else
                 {
-                    if (authInfo.First().PIN.Equals("disabled"))
+                    if (authInfo.First().PIN.Equals("DISABLED"))
                     {
                         status = "-1";
                         result = "User Already Registered";
@@ -166,7 +203,7 @@ namespace QuickFactorService
                 try
                 {
                     QuickFactorAuthenticationServiceModel tstDb = new QuickFactorAuthenticationServiceModel();
-                    authInfo.First().PIN = "disabled";
+                    authInfo.First().PIN = "DISABLED";
                     authInfo.First().ANSWER = encryptSecretDate;
                     tstDb.authentication_info.AddOrUpdate(authInfo.First());
                     int saveStatus = tstDb.SaveChanges();
@@ -204,7 +241,7 @@ namespace QuickFactorService
 
             byte[] resultBytes = Encoding.UTF8.GetBytes(sb.ToString());
             WebOperationContext.Current.OutgoingResponse.ContentType = "text/html";
-
+            WebOperationContext.Current.OutgoingResponse.StatusCode = System.Net.HttpStatusCode.OK;
             return new MemoryStream(resultBytes);
         }
 
@@ -227,7 +264,7 @@ namespace QuickFactorService
                 }
                 else
                 {
-                    if (authInfo.First().PIN.Equals("disabled"))
+                    if (authInfo.First().PIN.Equals("DISABLED"))
                     {
                         status = "-1";
                         result = "User Already Registered";
@@ -266,7 +303,7 @@ namespace QuickFactorService
 
             byte[] resultBytes = Encoding.UTF8.GetBytes(sb.ToString());
             WebOperationContext.Current.OutgoingResponse.ContentType = "text/html";
-
+            WebOperationContext.Current.OutgoingResponse.StatusCode = System.Net.HttpStatusCode.OK;
             return new MemoryStream(resultBytes);
 
         }
